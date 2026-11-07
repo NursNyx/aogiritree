@@ -32,3 +32,16 @@ class CriterionConfig(BaseModel):
 
 class ChecklistConfig(BaseModel):
     criteria: List[CriterionConfig] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def validate_configuration(self) -> "ChecklistConfig":
+        ids = [criterion.criterion_id for criterion in self.criteria]
+        if len(ids) != len(set(ids)):
+            raise ValueError("criterion_id values must be unique")
+        if not self.criteria:
+            return self
+        scored = [criterion for criterion in self.criteria if criterion.criterion_id != "critical"]
+        total_weight = sum(criterion.weight for criterion in scored)
+        if abs(total_weight - 100.0) > 1e-6:
+            raise ValueError("weights of scored criteria must sum to 100")
+        return self
