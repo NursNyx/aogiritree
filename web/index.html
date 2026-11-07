@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Freedom Broker CQA Starter</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Freedom Broker CQA Starter</h1>
+      <p>Conversation Quality Analytics (Hackathon Starter)</p>
+      <span id="healthStatus">Backend: checking…</span>
+    </header>
+
+    <main>
+      <section>
+        <h2>Conversations</h2>
+        <p>Starter area for loading Russian, Kazakh, and English conversations.</p>
+        <pre id="conversationPreview"></pre>
+      </section>
+
+      <section>
+        <h2>Evaluation Results</h2>
+        <p>Use backend evaluator endpoints for real evaluations. No fake AI output is generated.</p>
+      </section>
+
+      <section>
+        <h2>Checklist Settings</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Weight</th>
+              <th>N/A</th>
+              <th>Scale</th>
+            </tr>
+          </thead>
+          <tbody id="checklistTable"></tbody>
+        </table>
+        <button id="saveChecklistBtn" type="button">Save Checklist</button>
+      </section>
+
+      <section>
+        <h2>Appeals</h2>
+        <p>Starter area for appeal and reviewer-decision workflows.</p>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
