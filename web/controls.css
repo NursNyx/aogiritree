@@ -1,5 +1,30 @@
 .hero-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .secondary { border: 1px solid #ffffff55; border-radius: 10px; background: transparent; color: inherit; padding: 11px 15px; font-weight: 700; cursor: pointer; }
+.dataset-select { display: flex; align-items: center; gap: 7px; color: #dff4e9; font-weight: 700; }
+.dataset-select select { border: 1px solid #ffffff55; border-radius: 8px; background: #ffffff18; color: inherit; padding: 9px; }
+.dataset-select option { color: #12241e; }
+.error-card { border: 1px solid #e8b7b0; background: #fff3f1; color: #7d2e25; border-radius: 10px; padding: 16px; }
+.error-card h3 { margin: 0 0 5px; }
+.error-card p { margin: 0 0 7px; }
+.audio-panel { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 16px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: #f7fbf9; }
+.audio-panel audio { width: min(500px, 100%); }
+.audio-panel a { color: var(--green); font-weight: 700; }
+.score-summary { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; padding: 12px 14px; border-radius: 10px; background: var(--mint); color: var(--green); }
+.score-summary span { font-size: 12px; }
+.criterion-meta { color: var(--green); font-weight: 700; }
+.appeal-link { border: 0; background: transparent; color: var(--muted); text-decoration: underline; cursor: pointer; padding: 4px 7px; }
+.form-field { display: block; margin: 14px 0; font-weight: 700; }
+.form-field select, .form-field textarea { display: block; width: 100%; margin-top: 6px; border: 1px solid var(--line); border-radius: 8px; padding: 9px; font: inherit; }
+.status-filter { width: 100%; margin: 0 0 11px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; background: white; color: var(--ink); }
+.review-dialog { padding: 24px; }
+.review-dialog h2 { margin: 2px 0 12px; }
+.appeal-card { display: grid; grid-template-columns: 1fr auto; gap: 10px; border-top: 1px solid var(--line); padding: 13px 0; }
+.appeal-card span, .appeal-card p, .appeal-card small { display: block; color: var(--muted); }
+.appeal-card p { margin: 4px 0 0; }
+.appeal-card select { align-self: start; min-width: 85px; border: 1px solid var(--line); border-radius: 7px; padding: 6px; }
+.appeal-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 7px; }
+.appeal-actions .secondary { color: var(--ink); border-color: var(--line); padding: 7px 10px; }
+.appeal-actions .primary { padding: 7px 10px; }
 dialog { width: min(560px, 92vw); border: 0; border-radius: 16px; padding: 0; box-shadow: 0 25px 70px #001b1255; }
 dialog::backdrop { background: #06271f99; }
 dialog form { padding: 24px; }
