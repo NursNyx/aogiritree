@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from typing import Any, Literal
 
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -17,8 +18,9 @@ from .database import (
     save_prod_results,
 )
 from .evaluator import (
-    Appeal, Conversation, DEMO_CONVERSATION, ErrorResult, EvaluationResult,
-    OpenAICompatibleEvaluator, ReviewerDecision, recalculate_result,
+    Appeal, AppealUpdate, Conversation, CRITERION_IDS, DEMO_CONVERSATION,
+    ErrorResult, EvaluationResult, OpenAICompatibleEvaluator, ReviewerDecision,
+    CriterionEvaluation, recalculate_result,
 )
 
 app = FastAPI(title="Freedom Broker CQA", version="0.2.0")
@@ -78,6 +80,18 @@ def health() -> dict:
         "model": os.getenv("LLM_MODEL", "qwen/qwen3-4b-2507"),
         "model_base_url": os.getenv("LLM_BASE_URL", "http://127.0.0.1:1234/v1"),
     }
+
+
+@app.get("/api/model/status")
+async def model_status() -> dict:
+    base_url = os.getenv("LLM_BASE_URL", "http://127.0.0.1:1234/v1").rstrip("/")
+    model = os.getenv("LLM_MODEL", "qwen/qwen3-4b-2507")
+    try:
+        async with httpx.AsyncClient(timeout=2) as client:
+            response = await client.get(f"{base_url}/models")
+        return {"reachable": response.is_success, "model": model, "base_url": base_url}
+    except Exception as error:
+        return {"reachable": False, "model": model, "base_url": base_url, "error": str(error)}
 
 
 @app.get("/api/checklist", response_model=ChecklistConfig)
@@ -183,9 +197,22 @@ def validate_results(group_id: Literal["DEV", "PROD"] = "DEV") -> dict:
             ids = [criterion.get("criterion_id") for criterion in item.get("criteria", [])]
             if ids != ["contact", "discovery", "identification", "consultation", "empathy", "dialogue", "closure", "critical"]:
                 errors.append(f"invalid criteria for {item.get('conversation_id')}")
+            score = item.get("score") or {}
+            if score.get("final_score") is not None and not 0 <= score["final_score"] <= 100:
+                errors.append(f"invalid score for {item.get('conversation_id')}")
         elif item.get("status") != "error":
             errors.append(f"invalid status for {item.get('conversation_id')}")
-    return {"valid": not errors, "group_id": group_id, "total": len(results), "errors": errors}
+        elif not item.get("error") or item.get("criteria") != [] or item.get("score") is not None:
+            errors.append(f"invalid error result for {item.get('conversation_id')}")
+    return {
+        "valid": not errors,
+        "group_id": group_id,
+        "total": len(results),
+        "ok": sum(item.get("status") == "ok" for item in results),
+        "error": sum(item.get("status") == "error" for item in results),
+        "pending": max(0, len(dataset_ids) - len(results)),
+        "errors": errors,
+    }
 
 
 @app.post("/api/evaluations/recalculate", response_model=EvaluationResult)
@@ -195,16 +222,78 @@ def recalculate_evaluation(base_result: EvaluationResult, decision: ReviewerDeci
 
 
 @app.get("/api/appeals")
-def get_appeals() -> list[dict]:
-    return load_appeals()
+def get_appeals(status: Literal["open", "confirmed", "changed"] | None = None) -> list[dict]:
+    appeals = load_appeals()
+    if status:
+        appeals = [appeal for appeal in appeals if appeal.get("status") == status]
+    return appeals
 
 
 @app.post("/api/appeals", response_model=Appeal)
 def create_appeal(appeal: Appeal) -> Appeal:
     current = load_appeals()
+    if any(item.get("appeal_id") == appeal.appeal_id for item in current):
+        raise HTTPException(status_code=409, detail="appeal_id already exists")
     current.append(appeal.model_dump())
     save_appeals(current)
     return appeal
+
+
+@app.put("/api/appeals/{appeal_id}")
+def resolve_appeal(
+    appeal_id: str,
+    payload: AppealUpdate,
+    group_id: Literal["DEV", "PROD"] = "DEV",
+) -> dict[str, Any]:
+    appeals = load_appeals()
+    appeal = next((item for item in appeals if item.get("appeal_id") == appeal_id), None)
+    if appeal is None:
+        raise HTTPException(status_code=404, detail="Appeal not found")
+    if payload.status == "changed" and "reviewer_value" not in payload.model_fields_set:
+        raise HTTPException(status_code=400, detail="reviewer_value is required when changing a result")
+    result_file = _results(group_id)
+    result_item = next(
+        (item for item in result_file.get("results", [])
+         if item.get("conversation_id") == appeal.get("conversation_id")),
+        None,
+    )
+    if result_item is None:
+        raise HTTPException(status_code=404, detail="Evaluation result not found")
+    updated_result: EvaluationResult | None = None
+    if payload.status == "changed":
+        if result_item.get("status") != "ok":
+            raise HTTPException(status_code=400, detail="Only successful evaluations can be recalculated")
+        base_result = EvaluationResult.model_validate(result_item)
+        current = next(
+            (item for item in base_result.criteria if item.criterion_id == appeal.get("criterion_id")),
+            None,
+        )
+        if current is None or appeal.get("criterion_id") not in CRITERION_IDS:
+            raise HTTPException(status_code=400, detail="Unknown criterion_id")
+        update = CriterionEvaluation(
+            criterion_id=current.criterion_id,
+            value=payload.reviewer_value,
+            rationale=payload.reviewer_decision or "Оценка изменена проверяющим.",
+            evidence_turns=current.evidence_turns,
+        )
+        updated_result = recalculate_result(
+            base_result,
+            ChecklistConfig.model_validate(load_checklist()),
+            ReviewerDecision(updates=[update], decision_note=payload.reviewer_decision),
+        )
+        result_file["results"] = [
+            updated_result.model_dump()
+            if item.get("conversation_id") == appeal.get("conversation_id") else item
+            for item in result_file.get("results", [])
+        ]
+        _save_results(group_id, result_file)
+    appeal.update({
+        "status": payload.status,
+        "reviewer_decision": payload.reviewer_decision,
+        "reviewer_value": payload.reviewer_value,
+    })
+    save_appeals(appeals)
+    return {"appeal": appeal, "result": updated_result.model_dump() if updated_result else result_item}
 
 
 app.mount("/", StaticFiles(directory=Path(__file__).resolve().parent.parent / "web", html=True), name="web")

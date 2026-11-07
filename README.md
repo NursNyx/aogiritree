@@ -67,6 +67,7 @@ FastAPI serves the frontend and API from the same origin.
 
 ## Initial API endpoints
 - `GET /health`
+- `GET /api/model/status`
 - `GET /api/checklist`
 - `PUT /api/checklist`
 - `POST /api/datasets/import`
@@ -77,6 +78,7 @@ FastAPI serves the frontend and API from the same origin.
 - `GET /api/results/{group_id}/validate`
 - `GET /api/appeals`
 - `POST /api/appeals`
+- `PUT /api/appeals/{appeal_id}?group_id=DEV|PROD` (решение проверяющего и пересчёт)
 - `POST /api/evaluations/recalculate`
 
 ## Import organizer data

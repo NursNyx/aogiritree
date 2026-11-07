@@ -61,6 +61,13 @@ class Appeal(BaseModel):
     note: str
     status: Literal["open", "confirmed", "changed"] = "open"
     reviewer_decision: Optional[str] = None
+    reviewer_value: bool | int | None = None
+
+
+class AppealUpdate(BaseModel):
+    status: Literal["open", "confirmed", "changed"]
+    reviewer_decision: str = ""
+    reviewer_value: bool | int | None = None
 
 
 class ReviewerDecision(BaseModel):
