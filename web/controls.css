@@ -1,0 +1,16 @@
+.hero-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.secondary { border: 1px solid #ffffff55; border-radius: 10px; background: transparent; color: inherit; padding: 11px 15px; font-weight: 700; cursor: pointer; }
+dialog { width: min(560px, 92vw); border: 0; border-radius: 16px; padding: 0; box-shadow: 0 25px 70px #001b1255; }
+dialog::backdrop { background: #06271f99; }
+dialog form { padding: 24px; }
+.modal-head { display: flex; justify-content: space-between; }
+.modal-head h2 { margin: 2px 0; }
+.modal-head small { color: var(--green); font-weight: 800; }
+.modal-head button { border: 0; background: none; font-size: 26px; }
+.check-row { display: grid; grid-template-columns: 1fr 70px 20px; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding: 10px 0; }
+.check-row span, .check-row small { display: block; }
+.check-row small { color: var(--muted); }
+.check-row input { width: 70px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+.modal-actions .secondary { color: var(--ink); border-color: var(--line); }
+@media (max-width: 800px) { .hero-actions { justify-content: flex-start; } }

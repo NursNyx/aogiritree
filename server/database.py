@@ -10,6 +10,8 @@ RESULTS_DEV_DIR = BASE_DIR / "results" / "dev"
 RESULTS_PROD_DIR = BASE_DIR / "results" / "prod"
 CHECKLIST_FILE = DATA_DIR / "checklist.json"
 APPEALS_FILE = RESULTS_DEV_DIR / "appeals.json"
+DEV_DATASET_FILE = DATA_DIR / "dev_dataset.json"
+DEV_RESULTS_FILE = RESULTS_DEV_DIR / "results.json"
 
 
 def ensure_directories() -> None:
@@ -45,3 +47,27 @@ def load_appeals() -> list[dict]:
 
 def save_appeals(payload: list[dict]) -> None:
     write_json(APPEALS_FILE, payload)
+
+
+def load_dev_dataset() -> dict:
+    return read_json(DEV_DATASET_FILE, {"dataset_group_id": "DEV", "total_records": 0, "records": []})
+
+
+def save_dev_dataset(payload: dict) -> None:
+    write_json(DEV_DATASET_FILE, payload)
+
+
+def load_dev_results() -> dict:
+    return read_json(
+        DEV_RESULTS_FILE,
+        {
+            "schema_version": "1.0",
+            "team_name": "",
+            "model": {"mode": "external_api", "name": ""},
+            "results": [],
+        },
+    )
+
+
+def save_dev_results(payload: dict) -> None:
+    write_json(DEV_RESULTS_FILE, payload)

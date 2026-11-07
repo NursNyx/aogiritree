@@ -1,53 +1,16 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Freedom Broker CQA Starter</title>
-    <link rel="stylesheet" href="./style.css" />
-  </head>
-  <body>
-    <header>
-      <h1>Freedom Broker CQA Starter</h1>
-      <p>Conversation Quality Analytics (Hackathon Starter)</p>
-      <span id="healthStatus">Backend: checking…</span>
-    </header>
-
-    <main>
-      <section>
-        <h2>Conversations</h2>
-        <p>Starter area for loading Russian, Kazakh, and English conversations.</p>
-        <pre id="conversationPreview"></pre>
-      </section>
-
-      <section>
-        <h2>Evaluation Results</h2>
-        <p>Use backend evaluator endpoints for real evaluations. No fake AI output is generated.</p>
-      </section>
-
-      <section>
-        <h2>Checklist Settings</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Type</th>
-              <th>Weight</th>
-              <th>N/A</th>
-              <th>Scale</th>
-            </tr>
-          </thead>
-          <tbody id="checklistTable"></tbody>
-        </table>
-        <button id="saveChecklistBtn" type="button">Save Checklist</button>
-      </section>
-
-      <section>
-        <h2>Appeals</h2>
-        <p>Starter area for appeal and reviewer-decision workflows.</p>
-      </section>
-    </main>
-
-    <script src="./app.js"></script>
-  </body>
-</html>
+<html lang="ru">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Freedom Broker CQA</title><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/controls.css"></head>
+<body>
+  <header><div><strong>CQA Workspace</strong><small>Freedom Broker Hackathon</small></div><span id="healthStatus">Проверка backend…</span></header>
+  <main>
+    <section class="hero"><div><p>CONVERSATION QUALITY ANALYTICS</p><h1>Объяснимая оценка<br>каждого диалога</h1></div><div class="hero-actions"><button id="settingsBtn" class="secondary">Настроить чек-лист</button><button id="downloadBtn" class="secondary">Скачать DEV</button><button id="batchBtn" class="primary">Оценить оставшиеся</button><label class="upload">Загрузить GET JSON<input id="datasetFile" type="file" accept=".json,.txt,application/json"></label></div></section>
+    <section class="metrics"><article><small>Диалоги</small><strong id="totalCount">0</strong></article><article><small>Чаты</small><strong id="chatCount">0</strong></article><article><small>Звонки</small><strong id="callCount">0</strong></article><article><small>Оценено</small><strong id="ratedCount">0</strong></article></section>
+    <section class="workspace">
+      <aside><div class="side-title"><div><small>НАБОР DEV</small><h2>Диалоги</h2></div><button id="refreshBtn" title="Обновить">↻</button></div><input id="search" placeholder="Поиск по ID или тексту"><div class="filters"><button class="active" data-language="all">Все</button><button data-language="RU">RU</button><button data-language="KZ">KZ</button><button data-language="EN">EN</button></div><div id="conversationList" class="list"><p class="empty">Загрузите DEV-набор</p></div></aside>
+      <section class="detail"><div id="emptyDetail" class="center"><h2>Выберите диалог</h2><p>Здесь появятся транскрипт, оценка и доказательства.</p></div><div id="detailContent" hidden><div class="detail-head"><div><div id="badges"></div><h2 id="conversationId"></h2></div><button id="evaluateBtn" class="primary">Запустить оценку</button></div><nav><button class="tab active" data-tab="transcript">Транскрипт</button><button class="tab" data-tab="evaluation">Оценка <span id="scoreBadge">—</span></button></nav><div id="transcript" class="panel"></div><div id="evaluation" class="panel" hidden></div></div></section>
+    </section>
+  </main>
+  <dialog id="settingsDialog"><form method="dialog"><div class="modal-head"><div><small>КОНФИГУРАЦИЯ</small><h2>Чек-лист оценки</h2></div><button value="cancel" aria-label="Закрыть">×</button></div><p>Вес N/A-критерия автоматически распределяется между применимыми критериями.</p><div id="checklistEditor"></div><div class="modal-actions"><button value="cancel" class="secondary">Отмена</button><button id="saveChecklistBtn" value="default" class="primary">Сохранить</button></div></form></dialog>
+  <div id="toast"></div><script src="/app.js"></script>
+</body></html>

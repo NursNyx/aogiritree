@@ -1,74 +1,23 @@
-const API_BASE = "http://127.0.0.1:8000";
-
-const healthStatus = document.getElementById("healthStatus");
-const checklistTable = document.getElementById("checklistTable");
-const saveChecklistBtn = document.getElementById("saveChecklistBtn");
-const conversationPreview = document.getElementById("conversationPreview");
-
-let checklistState = { criteria: [] };
-
-async function fetchHealth() {
-  try {
-    const response = await fetch(`${API_BASE}/health`);
-    const payload = await response.json();
-    healthStatus.textContent = `Backend: ${payload.status}`;
-  } catch (error) {
-    healthStatus.textContent = "Backend: unavailable";
-  }
-}
-
-function renderChecklist() {
-  checklistTable.innerHTML = "";
-  checklistState.criteria.forEach((criterion) => {
-    const row = document.createElement("tr");
-    row.innerHTML = `
-      <td>${criterion.criterion_id}</td>
-      <td>${criterion.type}</td>
-      <td><input type="number" step="0.01" data-id="${criterion.criterion_id}" value="${criterion.weight}" /></td>
-      <td>${criterion.na_allowed ? "yes" : "no"}</td>
-      <td>${criterion.scale ? criterion.scale.join(", ") : "-"}</td>
-    `;
-    checklistTable.appendChild(row);
-  });
-}
-
-async function fetchChecklist() {
-  const response = await fetch(`${API_BASE}/api/checklist`);
-  checklistState = await response.json();
-  renderChecklist();
-}
-
-async function fetchDemoConversation() {
-  const response = await fetch(`${API_BASE}/api/conversations/demo`);
-  const payload = await response.json();
-  conversationPreview.textContent = JSON.stringify(payload, null, 2);
-}
-
-saveChecklistBtn.addEventListener("click", async () => {
-  const weightInputs = checklistTable.querySelectorAll("input[data-id]");
-  const nextCriteria = checklistState.criteria.map((criterion) => {
-    const targetInput = [...weightInputs].find(
-      (input) => input.dataset.id === criterion.criterion_id,
-    );
-
-    return {
-      ...criterion,
-      weight: targetInput ? Number(targetInput.value) : criterion.weight,
-    };
-  });
-
-  const response = await fetch(`${API_BASE}/api/checklist`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ criteria: nextCriteria }),
-  });
-
-  checklistState = await response.json();
-  renderChecklist();
-});
-
-(async function init() {
-  await fetchHealth();
-  await fetchChecklist();
-  await fetchDemoConversation();
-})();
+let conversations=[],results=[],selected=null,language='all';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const criterionNames={contact:'Установление контакта',discovery:'Выявление потребности',identification:'Идентификация',consultation:'Корректность и полнота',empathy:'Эмпатия',dialogue:'Ведение, скорость и грамотность',closure:'Завершение',critical:'Грубые ошибки'};
+function toast(text){const el=$('#toast');el.textContent=text;el.className='show';setTimeout(()=>el.className='',2500)}
+function esc(text){return String(text).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+async function api(path,options){const response=await fetch(path,options);const body=await response.json();if(!response.ok)throw new Error(body.detail||body.error||`HTTP ${response.status}`);return body}
+async function health(){try{const value=await api('/health');$('#healthStatus').textContent=`Локальная модель · ${value.model}`;$('#healthStatus').className='online'}catch{$('#healthStatus').textContent='Backend недоступен'}}
+async function loadData(){conversations=await api('/api/conversations');const resultFile=await api('/api/results/dev');results=resultFile.results||[];renderMetrics();renderList();if(selected)openConversation(selected.conversation_id)}
+function renderMetrics(){const chats=conversations.filter(x=>x.channel==='agent chat').length;$('#totalCount').textContent=conversations.length;$('#chatCount').textContent=chats;$('#callCount').textContent=conversations.length-chats;$('#ratedCount').textContent=results.filter(x=>x.status==='ok').length}
+function renderList(){const query=$('#search').value.toLowerCase();const visible=conversations.filter(x=>(language==='all'||x.language===language)&&(!query||x.conversation_id.toLowerCase().includes(query)||x.transcript.some(t=>t.text.toLowerCase().includes(query))));$('#conversationList').innerHTML=visible.length?visible.map(x=>`<button class="conversation ${selected?.conversation_id===x.conversation_id?'selected':''}" data-id="${x.conversation_id}"><span><strong>${x.conversation_id}</strong><em>${x.language}</em></span><small>${esc(x.transcript.find(t=>t.speaker==='client')?.text||'Без текста')}</small></button>`).join(''):'<p class="empty">Ничего не найдено</p>';$$('.conversation').forEach(x=>x.onclick=()=>openConversation(x.dataset.id))}
+function openConversation(id){selected=conversations.find(x=>x.conversation_id===id);renderList();$('#emptyDetail').hidden=true;$('#detailContent').hidden=false;$('#conversationId').textContent=id;$('#badges').innerHTML=`<span>${selected.language}</span><span>${selected.channel}</span><span>${selected.transcript.length} реплик</span>`;$('#transcript').innerHTML=selected.transcript.map((t,i)=>`<div class="turn ${t.speaker}" id="turn-${i+1}"><b>${i+1}</b><div><small>${t.speaker}<time>${esc(t.timestamp)}</time></small><p>${esc(t.text)}</p></div></div>`).join('');renderEvaluation()}
+function renderEvaluation(){const result=results.find(x=>x.conversation_id===selected?.conversation_id);$('#scoreBadge').textContent=result?.score?.final_score??'—';$('#evaluation').innerHTML=result?result.criteria.map((x,i)=>`<article class="criterion"><b>${String(i+1).padStart(2,'0')}</b><div><h3>${criterionNames[x.criterion_id]}</h3><p>${esc(x.rationale)}</p><div>${x.evidence_turns.map(n=>`<button data-turn="${n}">Реплика ${n}</button>`).join('')}</div></div><strong>${x.value===null?'N/A':x.value}</strong></article>`).join(''):'<p class="empty">Оценка ещё не выполнена</p>';$$('[data-turn]').forEach(x=>x.onclick=()=>{document.querySelector(`[data-tab="transcript"]`).click();setTimeout(()=>document.querySelector(`#turn-${x.dataset.turn}`)?.scrollIntoView({behavior:'smooth',block:'center'}),50)})}
+async function evaluate(){if(!selected)return;const button=$('#evaluateBtn');button.disabled=true;button.textContent='Модель оценивает…';try{const result=await api(`/api/evaluations/${selected.conversation_id}`,{method:'POST'});results=results.filter(x=>x.conversation_id!==result.conversation_id);results.push(result);renderMetrics();renderEvaluation();document.querySelector('[data-tab="evaluation"]').click();toast('Оценка сохранена')}catch(error){toast(error.message)}finally{button.disabled=false;button.textContent='Запустить оценку'}}
+async function evaluateRemaining(){const button=$('#batchBtn');const done=new Set(results.filter(x=>x.status==='ok').map(x=>x.conversation_id));const queue=conversations.filter(x=>!done.has(x.conversation_id));if(!queue.length)return toast('Все диалоги уже оценены');button.disabled=true;for(let i=0;i<queue.length;i++){button.textContent=`Оценка ${i+1}/${queue.length}`;try{const result=await api(`/api/evaluations/${queue[i].conversation_id}`,{method:'POST'});results=results.filter(x=>x.conversation_id!==result.conversation_id);results.push(result);renderMetrics()}catch(error){toast(`${queue[i].conversation_id}: ${error.message}`)}}button.disabled=false;button.textContent='Оценить оставшиеся';toast('Пакетная оценка завершена')}
+async function downloadResults(){const payload=await api('/api/results/dev');const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download='results.json';link.click();URL.revokeObjectURL(url)}
+async function openSettings(){const checklist=await api('/api/checklist');$('#checklistEditor').innerHTML=checklist.criteria.map(x=>`<label class="check-row"><span><b>${criterionNames[x.criterion_id]}</b><small>${x.criterion_id} · ${x.type}${x.na_allowed?' · N/A':''}</small></span><input type="number" min="0" step="1" value="${x.weight}" data-criterion="${x.criterion_id}"><em>%</em></label>`).join('');$('#settingsDialog').showModal()}
+async function saveChecklist(event){event.preventDefault();const checklist=await api('/api/checklist');checklist.criteria.forEach(x=>x.weight=Number(document.querySelector(`[data-criterion="${x.criterion_id}"]`).value));const total=checklist.criteria.reduce((sum,x)=>sum+x.weight,0);if(total!==100)return toast(`Сумма весов должна быть 100%, сейчас ${total}%`);await api('/api/checklist',{method:'PUT',headers:{'content-type':'application/json'},body:JSON.stringify(checklist)});$('#settingsDialog').close();toast('Чек-лист сохранён')}
+$('#datasetFile').onchange=async event=>{try{const payload=JSON.parse(await event.target.files[0].text());const outcome=await api('/api/datasets/import',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(payload)});selected=null;await loadData();toast(`Импортировано ${outcome.total_records} диалогов`)}catch(error){toast(error.message)}};
+$('#refreshBtn').onclick=loadData;$('#search').oninput=renderList;$('#evaluateBtn').onclick=evaluate;
+$('#batchBtn').onclick=evaluateRemaining;$('#downloadBtn').onclick=downloadResults;$('#settingsBtn').onclick=openSettings;$('#saveChecklistBtn').onclick=saveChecklist;
+$$('.filters button').forEach(button=>button.onclick=()=>{$$('.filters button').forEach(x=>x.classList.remove('active'));button.classList.add('active');language=button.dataset.language;renderList()});
+$$('.tab').forEach(button=>button.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));button.classList.add('active');const evaluation=button.dataset.tab==='evaluation';$('#evaluation').hidden=!evaluation;$('#transcript').hidden=evaluation});
+health();loadData().catch(error=>toast(error.message));
