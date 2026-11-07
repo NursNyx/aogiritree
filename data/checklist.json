@@ -1,0 +1,60 @@
+{
+  "criteria": [
+    {
+      "criterion_id": "contact",
+      "type": "boolean",
+      "weight": 10,
+      "na_allowed": false,
+      "scale": null
+    },
+    {
+      "criterion_id": "discovery",
+      "type": "boolean",
+      "weight": 15,
+      "na_allowed": true,
+      "scale": null
+    },
+    {
+      "criterion_id": "identification",
+      "type": "boolean",
+      "weight": 20,
+      "na_allowed": true,
+      "scale": null
+    },
+    {
+      "criterion_id": "consultation",
+      "type": "scale",
+      "weight": 20,
+      "na_allowed": true,
+      "scale": [0, 5, 10, 15, 20]
+    },
+    {
+      "criterion_id": "empathy",
+      "type": "boolean",
+      "weight": 15,
+      "na_allowed": false,
+      "scale": null
+    },
+    {
+      "criterion_id": "dialogue",
+      "type": "scale",
+      "weight": 15,
+      "na_allowed": false,
+      "scale": [0, 4, 7, 10]
+    },
+    {
+      "criterion_id": "closure",
+      "type": "boolean",
+      "weight": 5,
+      "na_allowed": true,
+      "scale": null
+    },
+    {
+      "criterion_id": "critical",
+      "type": "boolean",
+      "weight": 0,
+      "na_allowed": false,
+      "scale": null
+    }
+  ]
+}
