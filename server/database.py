@@ -12,6 +12,8 @@ CHECKLIST_FILE = DATA_DIR / "checklist.json"
 APPEALS_FILE = RESULTS_DEV_DIR / "appeals.json"
 DEV_DATASET_FILE = DATA_DIR / "dev_dataset.json"
 DEV_RESULTS_FILE = RESULTS_DEV_DIR / "results.json"
+PROD_DATASET_FILE = DATA_DIR / "prod_dataset.json"
+PROD_RESULTS_FILE = RESULTS_PROD_DIR / "results.json"
 
 
 def ensure_directories() -> None:
@@ -29,8 +31,11 @@ def read_json(path: Path, default: Any) -> Any:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("w", encoding="utf-8") as f:
+    temporary = path.with_suffix(path.suffix + ".tmp")
+    with temporary.open("w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
+        f.flush()
+    temporary.replace(path)
 
 
 def load_checklist() -> dict:
@@ -57,6 +62,14 @@ def save_dev_dataset(payload: dict) -> None:
     write_json(DEV_DATASET_FILE, payload)
 
 
+def load_prod_dataset() -> dict:
+    return read_json(PROD_DATASET_FILE, {"dataset_group_id": "PROD", "total_records": 0, "records": []})
+
+
+def save_prod_dataset(payload: dict) -> None:
+    write_json(PROD_DATASET_FILE, payload)
+
+
 def load_dev_results() -> dict:
     return read_json(
         DEV_RESULTS_FILE,
@@ -71,3 +84,19 @@ def load_dev_results() -> dict:
 
 def save_dev_results(payload: dict) -> None:
     write_json(DEV_RESULTS_FILE, payload)
+
+
+def load_prod_results() -> dict:
+    return read_json(
+        PROD_RESULTS_FILE,
+        {
+            "schema_version": "1.0",
+            "team_name": "",
+            "model": {"mode": "local", "name": ""},
+            "results": [],
+        },
+    )
+
+
+def save_prod_results(payload: dict) -> None:
+    write_json(PROD_RESULTS_FILE, payload)

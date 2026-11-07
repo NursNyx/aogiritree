@@ -1,5 +1,11 @@
 .hero-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
 .secondary { border: 1px solid #ffffff55; border-radius: 10px; background: transparent; color: inherit; padding: 11px 15px; font-weight: 700; cursor: pointer; }
+.dataset-select { display: flex; align-items: center; gap: 7px; color: #dff4e9; font-weight: 700; }
+.dataset-select select { border: 1px solid #ffffff55; border-radius: 8px; background: #ffffff18; color: inherit; padding: 9px; }
+.dataset-select option { color: #12241e; }
+.error-card { border: 1px solid #e8b7b0; background: #fff3f1; color: #7d2e25; border-radius: 10px; padding: 16px; }
+.error-card h3 { margin: 0 0 5px; }
+.error-card p { margin: 0 0 7px; }
 dialog { width: min(560px, 92vw); border: 0; border-radius: 16px; padding: 0; box-shadow: 0 25px 70px #001b1255; }
 dialog::backdrop { background: #06271f99; }
 dialog form { padding: 24px; }
